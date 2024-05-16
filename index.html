@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Imágenes con TensorFlow.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        async function processImage() {
+            const imageElement = document.getElementById('inputImage');
+
+            // Convertir la imagen a un tensor
+            const imageTensor = tf.browser.fromPixels(imageElement).toFloat().div(tf.scalar(255));
+
+            // Recortar la imagen al centro
+            const [height, width] = [imageTensor.shape[0], imageTensor.shape[1]];
+            const boxes = [[0.25, 0.25, 0.75, 0.75]];  // Coordenadas del recorte (y1, x1, y2, x2)
+            const boxInd = [0];
+            const cropSize = [Math.floor(height / 2), Math.floor(width / 2)];
+            const croppedTensor = tf.image.cropAndResize(imageTensor.expandDims(0), boxes, boxInd, cropSize).squeeze();
+
+            // Mostrar la imagen recortada
+            const croppedCanvas = document.getElementById('croppedImage');
+            await tf.browser.toPixels(croppedTensor, croppedCanvas);
+
+            // Cambiar el tamaño de la imagen con tf.image.resizeBilinear
+            const resizedBilinearTensor = tf.image.resizeBilinear(croppedTensor, [100, 100]);
+            const resizedBilinearCanvas = document.getElementById('resizedImageBilinear');
+            await tf.browser.toPixels(resizedBilinearTensor, resizedBilinearCanvas);
+
+            // Cambiar el tamaño de la imagen con tf.image.resizeNearestNeighbor
+            const resizedNearestNeighborTensor = tf.image.resizeNearestNeighbor(croppedTensor, [100, 100]);
+            const resizedNearestNeighborCanvas = document.getElementById('resizedImageNearestNeighbor');
+            await tf.browser.toPixels(resizedNearestNeighborTensor, resizedNearestNeighborCanvas);
+
+            // Reflejar la imagen redimensionada (usando resizeBilinear)
+            const flippedTensor = tf.image.flipLeftRight(resizedBilinearTensor.expandDims(0)).squeeze();
+            const flippedCanvas = document.getElementById('flippedImage');
+            await tf.browser.toPixels(flippedTensor, flippedCanvas);
+        }
+    </script>
+</head>
+<body onload="processImage()">
+    <h1>Manipulación de Imágenes con TensorFlow.js</h1>
+
+    <h2>Imagen Original</h2>
+    <img id="inputImage" src="janis.webp" alt="Imagen Original" crossorigin="anonymous">
+
+    <h2>Foto Recortada</h2>
+    <canvas id="croppedImage"></canvas>
+
+    <h2>Cambio de tamaño (resizeBilinear)</h2>
+    <canvas id="resizedImageBilinear"></canvas>
+
+    <h2>Cambio de tamaño (resizeNearestNeighbor)</h2>
+    <canvas id="resizedImageNearestNeighbor"></canvas>
+
+    <h2>Foto modo espejo (resizeBilinear)</h2>
+    <canvas id="flippedImage"></canvas>
+</body>
+</html>
